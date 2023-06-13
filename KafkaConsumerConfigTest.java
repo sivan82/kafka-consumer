@@ -1,53 +1,67 @@
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
+@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
+@PropertySource("classpath:application.properties")
+@TestPropertySource("classpath:application.properties")
+@EnableConfigurationProperties
 public class KafkaConsumerConfigTest {
+
+    @Value("${bootstrap.servers}")
+    private String bootstrapServers;
+
+    @Value("${security.protocol}")
+    private String securityProtocol;
+
+    @Value("${ssl.truststore.location}")
+    private String truststoreLocation;
+
+    @Value("${ssl.truststore.password}")
+    private String truststorePassword;
+
+    @Value("${ssl.keystore.location}")
+    private String keystoreLocation;
+
+    @Value("${ssl.keystore.password}")
+    private String keystorePassword;
 
     private KafkaConsumerConfig kafkaConsumerConfig;
 
-    @BeforeEach
+    @PostConstruct
     public void setup() {
         kafkaConsumerConfig = new KafkaConsumerConfig();
     }
 
     @Test
     public void testConsumerFactory() {
-        // Mock the necessary properties
-        String bootstrapServers = "localhost:9092";
-        String truststoreLocation = "/path/to/truststore.jks";
-        String truststorePassword = "truststore-password";
-        String keystoreLocation = "/path/to/keystore.jks";
-        String keystorePassword = "keystore-password";
-
-        // Set up the expected properties
-        Map<String, Object> expectedProps = new HashMap<>();
-        expectedProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        expectedProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        expectedProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        expectedProps.put("security.protocol", "SSL");
-        expectedProps.put("ssl.truststore.location", truststoreLocation);
-        expectedProps.put("ssl.truststore.password", truststorePassword);
-        expectedProps.put("ssl.keystore.location", keystoreLocation);
-        expectedProps.put("ssl.keystore.password", keystorePassword);
-
         // Create the consumer factory
         ConsumerFactory<String, String> consumerFactory = kafkaConsumerConfig.consumerFactory();
 
         // Verify the consumer factory properties
-        assertEquals(expectedProps, ((DefaultKafkaConsumerFactory<String, String>) consumerFactory).getConfigurationProperties());
+        assertEquals(bootstrapServers, consumerFactory.getConfigurationProperties().get("bootstrap.servers"));
+        assertEquals(securityProtocol, consumerFactory.getConfigurationProperties().get("security.protocol"));
+        assertEquals(truststoreLocation, consumerFactory.getConfigurationProperties().get("ssl.truststore.location"));
+        assertEquals(truststorePassword, consumerFactory.getConfigurationProperties().get("ssl.truststore.password"));
+        assertEquals(keystoreLocation, consumerFactory.getConfigurationProperties().get("ssl.keystore.location"));
+        assertEquals(keystorePassword, consumerFactory.getConfigurationProperties().get("ssl.keystore.password"));
     }
 
     @Test
@@ -55,14 +69,10 @@ public class KafkaConsumerConfigTest {
         // Mock the consumer factory
         ConsumerFactory<String, String> consumerFactory = mock(ConsumerFactory.class);
 
-        // Set up the expected container factory
-        DefaultKafkaListenerContainerFactory<String, String> expectedFactory = new DefaultKafkaListenerContainerFactory<>();
-        expectedFactory.setConsumerFactory(consumerFactory);
-
         // Create the container factory
-        DefaultKafkaListenerContainerFactory<String, String> actualFactory = kafkaConsumerConfig.kafkaListenerContainerFactory();
+        DefaultKafkaListenerContainerFactory<String, String> containerFactory = kafkaConsumerConfig.kafkaListenerContainerFactory();
 
         // Verify the container factory configuration
-        assertEquals(expectedFactory.getConsumerFactory(), actualFactory.getConsumerFactory());
+        assertEquals(consumerFactory, containerFactory.getConsumerFactory());
     }
 }

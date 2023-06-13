@@ -1,5 +1,4 @@
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
@@ -13,21 +12,36 @@ import java.util.Map;
 @Configuration
 @EnableKafka
 public class KafkaConsumerConfig {
-    private final String bootstrapServers = "your-kafka-bootstrap-servers";
+
+    @Value("${bootstrap.servers}")
+    private String bootstrapServers;
+
+    @Value("${security.protocol}")
+    private String securityProtocol;
+
+    @Value("${ssl.truststore.location}")
+    private String truststoreLocation;
+
+    @Value("${ssl.truststore.password}")
+    private String truststorePassword;
+
+    @Value("${ssl.keystore.location}")
+    private String keystoreLocation;
+
+    @Value("${ssl.keystore.password}")
+    private String keystorePassword;
 
     @Bean
     public ConsumerFactory<String, String> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-
-        // SSL Configuration
-        props.put("security.protocol", "SSL");
-        props.put("ssl.truststore.location", "path-to-truststore.jks");
-        props.put("ssl.truststore.password", "truststore-password");
-        props.put("ssl.keystore.location", "path-to-keystore.jks");
-        props.put("ssl.keystore.password", "keystore-password");
+        props.put("bootstrap.servers", bootstrapServers);
+        props.put("key.deserializer", StringDeserializer.class);
+        props.put("value.deserializer", StringDeserializer.class);
+        props.put("security.protocol", securityProtocol);
+        props.put("ssl.truststore.location", truststoreLocation);
+        props.put("ssl.truststore.password", truststorePassword);
+        props.put("ssl.keystore.location", keystoreLocation);
+        props.put("ssl.keystore.password", keystorePassword);
 
         return new DefaultKafkaConsumerFactory<>(props);
     }
