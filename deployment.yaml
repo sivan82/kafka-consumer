@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-consumer
+  template:
+    metadata:
+      labels:
+        app: kafka-consumer
+    spec:
+      containers:
+        - name: kafka-consumer
+          image: your-docker-image
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: your-kafka-bootstrap-servers
+            - name: TRUSTSTORE_LOCATION
+              value: /app/truststore.jks
+            - name: TRUSTSTORE_PASSWORD
+              value: your-truststore-password
+            - name: KEYSTORE_LOCATION
+              value: /app/keystore.jks
+            - name: KEYSTORE_PASSWORD
+              value: your-keystore-password
+          volumeMounts:
+            - name: ssl-certs
+              mountPath: /app/
+              readOnly: true
+      volumes:
+        - name: ssl-certs
+          secret:
+            secretName: your-ssl-certs-secret
